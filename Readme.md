@@ -1,10 +1,10 @@
-**This project examines how different coding approaches affect program performance.**
+# **This project examines how different coding approaches affect program performance.**
 
 RegularPerformanceProcessor is the fastest because it performs **zero extra work**, avoiding thread synchronization, memory copying, and wrapper overhead that the other two classes introduce unnecessarily.
 
 In this specific benchmark scenario, the input data already exists in memory as a byte\[\]. Adding "high-performance" tools like ArrayPool or Interlocked counters when you do not actually need them only slows down execution.
 
-**Why Each Processor Performs Differently**
+## **Why Each Processor Performs Differently**
 
 - **RegularPerformanceProcessor (Fastest):** It takes a raw byte\[\] directly and loops over it. Because the C# JIT compiler optimizes foreach loops over plain arrays into direct pointer arithmetic without bounds checking, this executes with zero overhead.
 - **DirectBufferProcessor (Second Fastest):** It introduces two extra costs that slow it down slightly compared to the regular version. First, it uses Interlocked.Increment and Interlocked.Decrement, which forces CPU cache synchronization across threads. Second, accessing input.Span inside an async state machine requires unwrapping the ReadOnlyMemory&lt;byte&gt; struct before iterating.
@@ -14,7 +14,7 @@ ComputeChecksumSimd is drastically faster because it uses **SIMD (Single Instruc
 
 While your previous processors ran a scalar loop (1 byte per iteration), this method unlocks wide CPU vector registers (such as AVX2 or AVX-512) to perform parallel math directly on the hardware.
 
-**Key Reasons for the Speedup**
+## **Key Reasons for the Speedup**
 
 - **Parallel Data Processing:** Instead of adding 1 byte per loop step, MemoryMarshal.Cast groups 32 bytes into a single Vector&lt;byte&gt; (on a standard 256-bit AVX2 CPU). This cuts the number of loop iterations by **32x**.
 - **Zero Memory Allocation or Copying:** MemoryMarshal.Cast&lt;byte, Vector<byte&gt;> reinterprets the existing memory addresses directly as vectors. No new arrays are rented, and no bytes are copied.
@@ -22,8 +22,7 @@ While your previous processors ran a scalar loop (1 byte per iteration), this me
 - **Reduced Branching Overhead:** Fewer loop iterations mean the CPU spends far less time checking loop conditions (i < data.Length) and jumping back to the start of the loop.
 - **No Async or Threading Overhead:** This method is synchronous and operates directly on a ReadOnlySpan&lt;byte&gt;, completely avoiding Task.Yield(), state machine allocations, and Interlocked locks.
 
-The Results
-
+## **The Results**
 
 | Method                          | DataSize | Mean        | Error     | StdDev    | Ratio | RatioSD | Gen0   | Allocated | Alloc Ratio |
 |-------------------------------- |--------- |------------:|----------:|----------:|------:|--------:|-------:|----------:|------------:|
